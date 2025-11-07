@@ -1,0 +1,22 @@
+services:
+  rssbot:
+    build: .
+    container_name: rssbot
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+      - ./config.yaml:/app/config.yaml:ro # mount lokale config in container
+    environment:
+      - TZ=Europe/Amsterdam
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - "[ -f /data/app.log ] && find /data/app.log -mmin -10 | grep -q
+          app.log || exit 1"
+      interval: 5m
+      timeout: 10s
+      retries: 3
+    network_mode: bridge
+networks: {}

@@ -1,0 +1,27 @@
+# Global defaults
+username: "RSS Bot"
+avatar_url: "https://i.imgur.com/SQ9rYnZ.png"
+interval: 300
+message_template: "**[{source}]** {title}\n{link}"
+disable_preview: true # global toggle
+#data_dir: "/data" # Where to persist state inside the container (mounted as a volume)
+max_per_cycle: 50 # Optional: maximum items per cycle per feed (prevents bursts)
+delay: 1
+max_age_days: 3
+
+# Feeds to poll
+webhooks:
+  - url: "https://discord.com/api/webhooks/123456/ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    username: Reddit
+    avatar_url: "https://www.iconpacks.net/icons/2/free-reddit-logo-icon-2436-thumb.png"
+    disable_preview: false
+    feeds: 
+      - url: "https://www.reddit.com/r/python/.rss"
+        name: "r/python"
+        disable_preview: true
+
+  - url: "https://discord.com/api/webhooks/123456/ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    username: News
+    feeds: 
+      - url: "http://news.yahoo.com/rss/"
+        name: "Yahoo News"
