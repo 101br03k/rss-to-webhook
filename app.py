@@ -4,7 +4,7 @@ import time
 import yaml
 import feedparser
 import logging
-import requests
+from apprise import Apprise
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta, timezone
@@ -106,15 +106,30 @@ class RSSDiscordBot:
         )
 
     def _post_to_discord(self, webhook_url, content, username, avatar_url):
-        data = {"content": content, "username": username, "avatar_url": avatar_url}
         try:
-            resp = requests.post(webhook_url, json=data, timeout=10)
-            if resp.status_code >= 400:
+            # Reject raw Discord webhook HTTP URLs. Require Apprise service URLs
+            # (e.g. discord://{id}/{token}) so callers explicitly configure the
+            # desired Apprise target.
+            if (
+                webhook_url.startswith("https://discord.com/api/webhooks/")
+                or "discordapp.com/api/webhooks" in webhook_url
+            ):
                 self.logger.error(
-                    f"Discord webhook failed {resp.status_code}: {resp.text}"
+                    "Raw Discord webhook URLs are not supported. "
+                    "Please use an Apprise service URL like: discord://<id>/<token>"
                 )
+                return
+
+            # Use Apprise to send the notification. The `webhook_url` must be
+            # an Apprise-compatible service URL (e.g. discord://..., slack://...)
+            a = Apprise()
+            a.add(webhook_url)
+
+            ok = a.notify(title=username or "RSS Bot", body=content)
+            if not ok:
+                self.logger.error(f"Apprise notification failed for {webhook_url}")
         except Exception as e:
-            self.logger.error(f"Error posting to Discord: {e}")
+            self.logger.error(f"Error posting via Apprise: {e}")
 
     def run(self):
         last_run = {feed["url"]: 0 for feed in self.feeds}
