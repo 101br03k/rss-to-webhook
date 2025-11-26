@@ -9,12 +9,17 @@ max_per_cycle: 50 # Optional: maximum items per cycle per feed (prevents bursts)
 delay: 1
 max_age_days: 3
 
-# Feeds to poll
+# Feeds to poll via Apprise notifications
+# Apprise supports 100+ services including:
+#   - Chat: discord://, slack://, tgram://, mattermost://, rocketchat://
+#   - Email: mailtos://, sendgrid://, mailgun://, etc.
+#   - Monitoring: gotify://, ntfy://, pushbullet://, etc.
+#
+# Service URL format: <protocol>://<token_or_id>/<additional_params>
+#
+# For more details on each service, visit: https://github.com/caronc/apprise/wiki
 webhooks:
-  # IMPORTANT: Raw Discord HTTPS webhook URLs are NOT supported anymore.
-  # You must provide an Apprise service URL instead, for example:
-  #   discord://<webhook_id>/<webhook_token>
-  # Apprise supports many other services as well (slack://, email://, etc.).
+  # Discord example: discord://<webhook_id>/<webhook_token>
   - url: "discord://123456/ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     username: Reddit
     avatar_url: "https://www.iconpacks.net/icons/2/free-reddit-logo-icon-2436-thumb.png"
@@ -24,8 +29,16 @@ webhooks:
         name: "r/python"
         disable_preview: true
 
-  - url: "https://discord.com/api/webhooks/123456/ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  # Slack example: slack://<token_a>/<token_b>/<token_c>
+  - url: "slack://T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
     username: News
     feeds: 
       - url: "http://news.yahoo.com/rss/"
         name: "Yahoo News"
+
+  # Email example: mailtos://user:password@smtp.gmail.com/?to=recipient@example.com
+  # - url: "mailtos://user:password@smtp.gmail.com/?to=notify@example.com"
+  #   username: "Email Notifications"
+  #   feeds:
+  #     - url: "https://example.com/feed.xml"
+  #       name: "Important Updates"

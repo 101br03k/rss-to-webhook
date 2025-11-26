@@ -105,31 +105,43 @@ class RSSDiscordBot:
             link=link,
         )
 
-    def _post_to_discord(self, webhook_url, content, username, avatar_url):
+    def _post_via_apprise(self, service_url, content, username, avatar_url):
+        """Send notifications via Apprise to any supported service.
+        
+        Args:
+            service_url: Apprise service URL (e.g., discord://..., slack://..., etc.)
+            content: The notification body/message
+            username: Display name/username for the notification
+            avatar_url: Avatar URL (optional, passed as query parameter in service URL)
+        """
         try:
             # Reject raw Discord webhook HTTP URLs. Require Apprise service URLs
             # (e.g. discord://{id}/{token}) so callers explicitly configure the
             # desired Apprise target.
-            if (
-                webhook_url.startswith("https://discord.com/api/webhooks/")
-                or "discordapp.com/api/webhooks" in webhook_url
-            ):
-                self.logger.error(
-                    "Raw Discord webhook URLs are not supported. "
-                    "Please use an Apprise service URL like: discord://<id>/<token>"
-                )
+                        # Append avatar_url as a query parameter if provided and not already present
+            apprise_url = service_url
+            if avatar_url and "avatar" not in apprise_url:
+                separator = "&" if "?" in apprise_url else "?"
+                apprise_url = f"{service_url}{separator}image={avatar_url}"
+
+            # Create Apprise instance and add the service URL
+            a = Apprise()
+            if not a.add(apprise_url):
+                self.logger.error(f"Failed to add service URL: {service_url}")
                 return
 
-            # Use Apprise to send the notification. The `webhook_url` must be
-            # an Apprise-compatible service URL (e.g. discord://..., slack://...)
-            a = Apprise()
-            a.add(webhook_url)
-
+            # Attempt to send the notification with title and body
             ok = a.notify(title=username or "RSS Bot", body=content)
             if not ok:
-                self.logger.error(f"Apprise notification failed for {webhook_url}")
+                self.logger.error(
+                    f"Apprise notification failed for {service_url}"
+                )
+            else:
+                self.logger.debug(
+                    f"Successfully sent notification via Apprise"
+                )
         except Exception as e:
-            self.logger.error(f"Error posting via Apprise: {e}")
+            self.logger.error(f"Error posting via Apprise to {service_url}: {e}")
 
     def run(self):
         last_run = {feed["url"]: 0 for feed in self.feeds}
@@ -190,7 +202,7 @@ class RSSDiscordBot:
                             continue  # te old = skip post
 
                     content = self._format_message(feed, entry)
-                    self._post_to_discord(
+                    self._post_via_apprise(
                         feed["webhook_url"],
                         content,
                         feed.get("username", "RSS Bot"),
